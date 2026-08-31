@@ -97,22 +97,10 @@ def quota_room(quota, slots):
     return any(quota.used_today(s.label) < s.daily_cap for s in slots)
 
 
-def main():
-    ap = argparse.ArgumentParser(description="Autonomous poll-and-send loop")
-    ap.add_argument("--dry-run", action="store_true", help="show the flow, do not call APIs")
-    ap.add_argument("--once", action="store_true", help="poll + send one batch, then exit")
-    args = ap.parse_args()
-
-    if not POOLER_TOKEN and not args.dry_run:
-        log("error", "POOLER_TOKEN env var is required (set it before running)")
-        return
-
+def run_forever(dry_run: bool = False, once: bool = False, _args=None):
     slots = load_slots()
     if not slots:
         log("error", "no provider slots (set PROVIDERS_JSON or PROVIDERS_CONFIG)")
-        return
-    if not FROM_EMAIL and not args.dry_run:
-        log("error", "FROM_EMAIL env var is required")
         return
 
     store = store_from_env(SEEN_DB)
@@ -157,7 +145,7 @@ def main():
                     time.sleep(30)
                     continue
 
-            if not args.dry_run and quota is not None and not quota_room(quota, slots):
+            if not dry_run and quota is not None and not quota_room(quota, slots):
                 secs = seconds_until_midnight()
                 log("quota", f"all providers at daily cap; sleeping {secs/3600:.1f}h until reset")
                 time.sleep(min(secs, 3600))
@@ -183,16 +171,16 @@ def main():
             stats = run_scheduler(
                 sender, store, targets, variants=variants or None,
                 delay=(DELAY_LO, DELAY_HI),
-                dry_run=args.dry_run, on_result=on_result, quota=quota,
+                dry_run=dry_run, on_result=on_result, quota=quota,
             )
             log("done", f"batch finished: sent={stats['sent']} bounce={stats['bounced']} "
                         f"invalid={stats['invalid']} dupe={stats['duplicates']} "
                         f"quota={stats['quota']}")
 
-            if args.once:
+            if once:
                 break
 
-            if args.dry_run:
+            if dry_run:
                 log("dry", "dry run complete")
                 break
 
@@ -204,6 +192,22 @@ def main():
     finally:
         sender.close()
         store.close()
+
+
+def main():
+    ap = argparse.ArgumentParser(description="Autonomous poll-and-send loop")
+    ap.add_argument("--dry-run", action="store_true", help="show the flow, do not call APIs")
+    ap.add_argument("--once", action="store_true", help="poll + send one batch, then exit")
+    args = ap.parse_args()
+
+    if not POOLER_TOKEN and not args.dry_run:
+        log("error", "POOLER_TOKEN env var is required (set it before running)")
+        return
+    if not FROM_EMAIL and not args.dry_run:
+        log("error", "FROM_EMAIL env var is required")
+        return
+
+    run_forever(dry_run=args.dry_run, once=args.once)
 
 
 if __name__ == "__main__":

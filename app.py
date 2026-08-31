@@ -27,17 +27,37 @@ Run locally:
 """
 
 import os
+import threading
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
 from relay import RelaySender
+from run_loop import run_forever
 from seendb import store_from_env, PgDailyCount, CampaignControl
 from scheduler import run_scheduler
 from send_relay import EventVariants
 
-app = FastAPI(title="Email Delivery", version="1.0")
+CAMPAIGN_ACTIVE = os.environ.get("CAMPAIGN_ACTIVE", "").strip().lower() in ("true", "1", "on", "start")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if CAMPAIGN_ACTIVE:
+        t = threading.Thread(target=run_forever, kwargs={"dry_run": False, "once": False}, daemon=True)
+        t.start()
+        print(f"[loop] campaign active; poll-and-send loop started (thread {t.name})", flush=True)
+    else:
+        print("[loop] CAMPAIGN_ACTIVE=false or unset; loop not started", flush=True)
+    try:
+        yield
+    finally:
+        pass
+
+
+app = FastAPI(title="Email Delivery", version="1.0", lifespan=lifespan)
 
 CONFIG = os.environ.get("PROVIDERS_CONFIG", "providers.json")
 PROVIDERS_JSON = os.environ.get("PROVIDERS_JSON", "")
