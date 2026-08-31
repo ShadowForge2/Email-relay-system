@@ -40,6 +40,7 @@ import os
 import random
 import sys
 import time
+import urllib.request
 from datetime import date, datetime, timedelta
 
 from poll_emails import poll as pooler_poll
@@ -74,6 +75,16 @@ def seconds_until_midnight():
     now = datetime.now()
     nxt = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
     return max(1, (nxt - now).total_seconds())
+
+
+def egress_ip():
+    for url in ("https://api.ipify.org", "https://icanhazip.com", "https://ifconfig.me/ip"):
+        try:
+            with urllib.request.urlopen(url, timeout=10) as r:
+                return r.read().decode().strip()
+        except Exception:
+            continue
+    return "unknown"
 
 
 def load_slots():
@@ -132,6 +143,7 @@ def run_forever(dry_run: bool = False, once: bool = False, _args=None):
     log("start", f"providers={[s.label for s in slots]} targets={POOLER_AUDIENCES} "
                  f"batch={POOLER_BATCH} delay={DELAY_LO}-{DELAY_HI}s event={EVENT} "
                  f"seen={'postgres' if quota else SEEN_DB}")
+    log("ip", f"egress IP visible to Brevo: {egress_ip()}")
 
     def on_result(addr, tag, message):
         log(tag.lower(), f"{addr}  {message}")
