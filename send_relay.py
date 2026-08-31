@@ -27,8 +27,6 @@ import time
 from relay import RelaySender, RelayResult, RelayStatus
 from seendb import SeenStore
 
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-
 TAG = {
     RelayStatus.SENT: "SENT ",
     RelayStatus.FAILED: "FAIL ",
@@ -210,4 +208,9 @@ def main():
 
 
 if __name__ == "__main__":
+    try:
+        if hasattr(sys.stdout, "buffer"):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    except Exception:
+        pass
     main()

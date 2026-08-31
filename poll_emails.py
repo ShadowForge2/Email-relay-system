@@ -23,8 +23,6 @@ import urllib.request
 
 from seendb import SeenStore
 
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-
 DEFAULT_BASE = "https://email-database-api-pooler1000.onrender.com"
 DEFAULT_TOKEN = os.environ.get("POOLER_TOKEN", "")
 
@@ -50,6 +48,42 @@ def post_json(url: str, token: str, payload: dict, timeout: int = 60) -> dict:
         raise RuntimeError("HTTP {} {}: {}".format(e.code, e.reason, detail[:300]))
     except urllib.error.URLError as e:
         raise RuntimeError("Network error: {}".format(e.reason))
+
+
+def _as_email(v) -> str:
+    if isinstance(v, dict):
+        return str(v.get("email", "")).strip()
+    return str(v).strip()
+
+
+def poll(
+    base: str, token: str, payload: dict, store=None, timeout: int = 60, extract: bool = False,
+) -> list:
+    """POST a query to the pooler and return the emails that are new (not in ``store``).
+
+    Reusable by the CLI, the web app, and the autonomous loop. When ``store``
+    is given, each returned address is registered and only fresh ones are
+    returned.
+    """
+    endpoint = "pool" if extract else "list"
+    if extract:
+        payload = dict(payload)
+        payload["extract"] = True
+    url = "{}/v1/subscribers/{}".format(base.rstrip("/"), endpoint)
+    data = post_json(url, token, payload, timeout=timeout)
+    if not data.get("success"):
+        raise RuntimeError("pooler returned failure: " + json.dumps(data)[:300])
+
+    if endpoint == "pool":
+        emails = [_as_email(x) for x in (data.get("pooled") or [])]
+    else:
+        emails = [_as_email(x) for x in (data.get("subscribers") or [])]
+    emails = [e for e in emails if e]
+
+    if store is not None:
+        fresh = [e for e in emails if store.register_polled(e)]
+        return fresh
+    return emails
 
 
 def main():
@@ -167,4 +201,9 @@ def main():
 
 
 if __name__ == "__main__":
+    try:
+        if hasattr(sys.stdout, "buffer"):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    except Exception:
+        pass
     main()

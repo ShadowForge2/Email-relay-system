@@ -28,6 +28,28 @@ Target regions: **British** and **Arabian** audiences.
    python send_relay.py --event cpbloomfx --recipients recipients_english.txt --max-today 100 --dry-run
    ```
 
+## Autonomous poll-and-send loop (run_loop.py)
+The app can poll fresh targets by itself and keep sending until the daily cap,
+then wait for the cap to reset and restart:
+
+```
+python run_loop.py --once      # poll + send one batch, then exit
+python run_loop.py             # run forever (poll -> send -> wait for reset)
+python run_loop.py --dry-run   # show the flow without calling APIs
+```
+
+Set these env vars (local or Render):
+- `POOLER_TOKEN` (required) — Bearer secret for the pooler
+- `POOLER_AUDIENCES` — space-separated, default `british arabian`
+- `POOLER_CHANNEL` — default `gmail`
+- `POOLER_BATCH` — how many to poll per batch, default `50`
+- `DELAY_LO` / `DELAY_HI` — randomized seconds between sends, default `30` / `90`
+- `EVENT` — event folder under `events/`, default `cpbloomfx`
+- `FROM_EMAIL` — sender address
+
+It prints a clear terminal/Render log at every step so you can watch it work:
+`[poll]`, `[send]`, `[sent]`, `[skip]`, `[bnce]`, `[quota]`.
+
 ## Endpoints (app.py)
 - `GET /health` — liveness
 - `GET /status` — per-slot quota usage
