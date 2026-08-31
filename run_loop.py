@@ -142,10 +142,6 @@ def run_forever(dry_run: bool = False, once: bool = False, _args=None):
                 log("switch", "CAMPAIGN_ACTIVE=false; paused")
                 time.sleep(30)
                 continue
-            if ctl is not None and not ctl.active():
-                log("switch", "database switch campaign_active=false; paused")
-                time.sleep(30)
-                continue
 
             if not dry_run and quota is not None and not quota_room(quota, slots):
                 secs = seconds_until_midnight()
