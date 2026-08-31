@@ -372,9 +372,7 @@ class RelaySender:
         self._results: List[RelayResult] = []
 
     @staticmethod
-    def load_slots(path: str) -> List[ProviderSlot]:
-        with open(path, "r", encoding="utf-8") as f:
-            raw = json.load(f)
+    def _parse_slots(raw) -> List[ProviderSlot]:
         slots = []
         for i, item in enumerate(raw):
             slots.append(ProviderSlot(
@@ -386,6 +384,17 @@ class RelaySender:
                 daily_cap=int(item.get("daily_cap", 100)),
             ))
         return slots
+
+    @staticmethod
+    def load_slots(path: str) -> List[ProviderSlot]:
+        with open(path, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        return RelaySender._parse_slots(raw)
+
+    @staticmethod
+    def load_slots_json(text: str) -> List[ProviderSlot]:
+        """Build slots from a JSON string (e.g. a PROVIDERS_JSON env var)."""
+        return RelaySender._parse_slots(json.loads(text))
 
     # ------------------------------------------------------------------ core
 

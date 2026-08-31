@@ -1,3 +1,9 @@
+databases:
+  - name: email-db
+    databaseName: emaildelivery
+    user: emaildelivery
+    plan: free
+
 services:
   - type: web
     name: email-delivery
@@ -6,10 +12,12 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: PROVIDERS_CONFIG
-        value: providers.json
-      - key: SEEN_DB
-        value: seen.sqlite
+      - key: PROVIDERS_JSON
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: email-db
+          property: connectionString
       - key: FROM_EMAIL
         sync: false
       - key: FROM_DISPLAY

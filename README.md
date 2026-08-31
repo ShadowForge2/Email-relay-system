@@ -32,9 +32,28 @@ Target regions: **British** and **Arabian** audiences.
 - `GET /health` — liveness
 - `GET /status` — per-slot quota usage
 - `POST /send` — send to one or more addresses
-- `POST /campaign` — bulk send with optional limit
+- `POST /campaign` — scheduled send: one-at-a-time, randomized delays, random
+  message variants, skip bounces (no retry), stops at provider daily caps.
+  Body: `{"to": [...], "event": "cpbloomfx", "delay_lo": 30, "delay_hi": 90, "limit": 100}`
+
+## Deploy to Render
+Requires the Render free **web** service plus a free **PostgreSQL** database
+(the free tier's filesystem is ephemeral — every restart wipes local files, so
+dedupe and daily caps must live in Postgres).
+
+1. Connect the GitHub repo to a Render Blueprint (uses `render.yaml`).
+2. Set these env vars (never commit them to git):
+   - `PROVIDERS_JSON` — the JSON array that would otherwise live in
+     `providers.json`, e.g. `[{"provider":"brevo","api_key":"...","daily_cap":300}]`
+   - `FROM_EMAIL` and `FROM_DISPLAY`
+   - `DATABASE_URL` is wired automatically from the PostgreSQL database.
+3. Trigger a send with `POST /campaign`.
+
+> The real `providers.json` (with live keys) is gitignored and is **not** in the
+> repo. On Render inject it via `PROVIDERS_JSON`.
 
 ## Security
 `providers.json`, recipient lists, seen DB, and private DKIM keys are gitignored
-and never committed. Put real credentials in `providers.json` and use env vars /
-`--token` for the pooler secret.
+and never committed. Put real credentials in `providers.json` (local) or the
+`PROVIDERS_JSON` env var (Render), and use env vars / `--token` for the pooler
+secret.
