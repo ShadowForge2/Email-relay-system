@@ -131,6 +131,7 @@ class PgDailyCount:
     def __init__(self, store):
         self._conn = store._conn
         self._lock = store._lock
+        self._pg = "Pg" in type(store).__name__
 
     @staticmethod
     def _today():
@@ -140,62 +141,108 @@ class PgDailyCount:
     def used_today(self, label: str) -> int:
         today = self._today()
         with self._lock:
-            with self._conn.cursor() as cur:
-                cur.execute(
-                    "SELECT n FROM sent_daily WHERE day = %s AND label = %s",
+            if self._pg:
+                with self._conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT n FROM sent_daily WHERE day = %s AND label = %s",
+                        (today, label),
+                    )
+                    row = cur.fetchone()
+            else:
+                row = self._conn.execute(
+                    "SELECT n FROM sent_daily WHERE day = ? AND label = ?",
                     (today, label),
-                )
-                row = cur.fetchone()
-                return int(row[0]) if row else 0
+                ).fetchone()
+            return int(row[0]) if row else 0
 
     def claim(self, label: str, cap: int) -> bool:
         today = self._today()
         with self._lock:
-            with self._conn.cursor() as cur:
-                cur.execute(
-                    "SELECT n FROM sent_daily WHERE day = %s AND label = %s",
+            if self._pg:
+                with self._conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT n FROM sent_daily WHERE day = %s AND label = %s",
+                        (today, label),
+                    )
+                    row = cur.fetchone()
+                    n = int(row[0]) if row else 0
+                    if n >= cap:
+                        return False
+                    if row:
+                        cur.execute(
+                            "UPDATE sent_daily SET n = n + 1 "
+                            "WHERE day = %s AND label = %s",
+                            (today, label),
+                        )
+                    else:
+                        cur.execute(
+                            "INSERT INTO sent_daily (day, label, n) VALUES (%s, %s, 1)",
+                            (today, label),
+                        )
+            else:
+                row = self._conn.execute(
+                    "SELECT n FROM sent_daily WHERE day = ? AND label = ?",
                     (today, label),
-                )
-                row = cur.fetchone()
+                ).fetchone()
                 n = int(row[0]) if row else 0
                 if n >= cap:
                     return False
                 if row:
-                    cur.execute(
+                    self._conn.execute(
                         "UPDATE sent_daily SET n = n + 1 "
-                        "WHERE day = %s AND label = %s",
+                        "WHERE day = ? AND label = ?",
                         (today, label),
                     )
                 else:
-                    cur.execute(
-                        "INSERT INTO sent_daily (day, label, n) VALUES (%s, %s, 1)",
+                    self._conn.execute(
+                        "INSERT INTO sent_daily (day, label, n) VALUES (?, ?, 1)",
                         (today, label),
                     )
-                return True
+                self._conn.commit()
+            return True
 
     def increment(self, label: str) -> int:
         """Record one sent message for ``label`` today; return new count."""
         today = self._today()
         with self._lock:
-            with self._conn.cursor() as cur:
-                cur.execute(
-                    "SELECT n FROM sent_daily WHERE day = %s AND label = %s",
+            if self._pg:
+                with self._conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT n FROM sent_daily WHERE day = %s AND label = %s",
+                        (today, label),
+                    )
+                    row = cur.fetchone()
+                    n = int(row[0]) if row else 0
+                    n += 1
+                    if row:
+                        cur.execute(
+                            "UPDATE sent_daily SET n = %s WHERE day = %s AND label = %s",
+                            (n, today, label),
+                        )
+                    else:
+                        cur.execute(
+                            "INSERT INTO sent_daily (day, label, n) VALUES (%s, %s, %s)",
+                            (today, label, n),
+                        )
+            else:
+                row = self._conn.execute(
+                    "SELECT n FROM sent_daily WHERE day = ? AND label = ?",
                     (today, label),
-                )
-                row = cur.fetchone()
+                ).fetchone()
                 n = int(row[0]) if row else 0
                 n += 1
                 if row:
-                    cur.execute(
-                        "UPDATE sent_daily SET n = %s WHERE day = %s AND label = %s",
+                    self._conn.execute(
+                        "UPDATE sent_daily SET n = ? WHERE day = ? AND label = ?",
                         (n, today, label),
                     )
                 else:
-                    cur.execute(
-                        "INSERT INTO sent_daily (day, label, n) VALUES (%s, %s, %s)",
+                    self._conn.execute(
+                        "INSERT INTO sent_daily (day, label, n) VALUES (?, ?, ?)",
                         (today, label, n),
                     )
-                return n
+                self._conn.commit()
+            return n
 
 
 class SeenStore:
@@ -208,6 +255,11 @@ class SeenStore:
         self._conn.execute("CREATE TABLE IF NOT EXISTS mailed (email TEXT PRIMARY KEY)")
         self._conn.execute(
             "CREATE TABLE IF NOT EXISTS control (k TEXT PRIMARY KEY, v TEXT)"
+        )
+        self._conn.execute(
+            "CREATE TABLE IF NOT EXISTS sent_daily "
+            "(day TEXT NOT NULL, label TEXT NOT NULL, n INTEGER DEFAULT 0, "
+            "PRIMARY KEY (day, label))"
         )
         self._conn.commit()
         self._lock = threading.Lock()
