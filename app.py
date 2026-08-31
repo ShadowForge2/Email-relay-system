@@ -229,7 +229,9 @@ def campaign_status():
         ctl = CampaignControl(store)
         active = ctl.active()
         return {
-            "campaign_active": active,
+            "campaign_active": CAMPAIGN_ACTIVE,
+            "env_switch": CAMPAIGN_ACTIVE,
+            "db_switch": active,
             "mailed_total": store.mailed_count(),
             "seen_db": SEEN_DB,
         }
