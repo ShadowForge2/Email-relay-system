@@ -62,6 +62,7 @@ POOLER_CHANNEL = os.environ.get("POOLER_CHANNEL", "gmail")
 POOLER_BATCH = int(os.environ.get("POOLER_BATCH", "50"))
 DELAY_LO = int(os.environ.get("DELAY_LO", "30"))
 DELAY_HI = int(os.environ.get("DELAY_HI", "90"))
+CAMPAIGN_ACTIVE = os.environ.get("CAMPAIGN_ACTIVE", "").strip().lower() in ("true", "1", "on", "start")
 
 
 def log(tag, message):
@@ -151,8 +152,8 @@ def main():
         while True:
             if ctl is not None:
                 active = ctl.active()
-                if not active:
-                    log("switch", "campaign inactive (campaign_active=false); paused")
+                if not active or not CAMPAIGN_ACTIVE:
+                    log("switch", "campaign inactive (CAMPAIGN_ACTIVE=false); paused")
                     time.sleep(30)
                     continue
 
