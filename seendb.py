@@ -52,6 +52,9 @@ class PgSeenStore:
                 "  PRIMARY KEY (day, label)"
                 ")"
             )
+            cur.execute(
+                "CREATE TABLE IF NOT EXISTS control (k VARCHAR PRIMARY KEY, v VARCHAR)"
+            )
         self._lock = threading.Lock()
 
     def _insert(self, table: str, email: str) -> bool:
@@ -203,6 +206,9 @@ class SeenStore:
         self._conn = sqlite3.connect(path, timeout=30)
         self._conn.execute("CREATE TABLE IF NOT EXISTS polled (email TEXT PRIMARY KEY)")
         self._conn.execute("CREATE TABLE IF NOT EXISTS mailed (email TEXT PRIMARY KEY)")
+        self._conn.execute(
+            "CREATE TABLE IF NOT EXISTS control (k TEXT PRIMARY KEY, v TEXT)"
+        )
         self._conn.commit()
         self._lock = threading.Lock()
 
@@ -248,3 +254,47 @@ class SeenStore:
     def close(self):
         with self._lock:
             self._conn.close()
+
+
+class CampaignControl:
+    """Persistent start/stop switch backed by a seen-store connection.
+
+    Works with both SQLite (SeenStore) and Postgres (PgSeenStore) by reading
+    the store's ``_conn``. `key=true` starts sending, `key=false` stops.
+    """
+
+    def __init__(self, store):
+        self._conn = store._conn
+        self._lock = store._lock
+        self._pg = "Pg" in type(store).__name__
+
+    def set(self, key: str, value: str) -> str:
+        with self._lock:
+            if self._pg:
+                with self._conn.cursor() as cur:
+                    cur.execute(
+                        "INSERT INTO control (k, v) VALUES (%s, %s) "
+                        "ON CONFLICT (k) DO UPDATE SET v = %s",
+                        (key, str(value), str(value)),
+                    )
+            else:
+                self._conn.execute(
+                    "INSERT OR REPLACE INTO control (k, v) VALUES (?, ?)",
+                    (key, str(value)),
+                )
+                self._conn.commit()
+        return str(value)
+
+    def get(self, key: str, default: str = "") -> str:
+        with self._lock:
+            if self._pg:
+                with self._conn.cursor() as cur:
+                    cur.execute("SELECT v FROM control WHERE k = %s", (key,))
+                    row = cur.fetchone()
+            else:
+                cur = self._conn.execute("SELECT v FROM control WHERE k = ?", (key,))
+                row = cur.fetchone()
+            return str(row[0]) if row else default
+
+    def active(self) -> bool:
+        return self.get("campaign_active", "").strip().lower() == "true"

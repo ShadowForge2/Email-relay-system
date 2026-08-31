@@ -46,7 +46,7 @@ from poll_emails import poll as pooler_poll
 from relay import RelayStatus, RelaySender
 from scheduler import run_scheduler
 from send_relay import EventVariants
-from seendb import PgDailyCount, store_from_env
+from seendb import CampaignControl, PgDailyCount, store_from_env
 
 CONFIG = os.environ.get("PROVIDERS_CONFIG", "providers.json")
 PROVIDERS_JSON = os.environ.get("PROVIDERS_JSON", "")
@@ -133,6 +133,13 @@ def main():
     except Exception:
         quota = None
 
+    ctl = None
+    try:
+        ctl = CampaignControl(store)
+    except Exception:
+        ctl = None
+    log("switch", f"campaign start/stop control {'enabled' if ctl else 'disabled'}")
+
     log("start", f"providers={[s.label for s in slots]} targets={POOLER_AUDIENCES} "
                  f"batch={POOLER_BATCH} delay={DELAY_LO}-{DELAY_HI}s event={EVENT} "
                  f"seen={'postgres' if quota else SEEN_DB}")
@@ -142,6 +149,13 @@ def main():
 
     try:
         while True:
+            if ctl is not None:
+                active = ctl.active()
+                if not active:
+                    log("switch", "campaign inactive (campaign_active=false); paused")
+                    time.sleep(30)
+                    continue
+
             if not args.dry_run and quota is not None and not quota_room(quota, slots):
                 secs = seconds_until_midnight()
                 log("quota", f"all providers at daily cap; sleeping {secs/3600:.1f}h until reset")

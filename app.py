@@ -33,7 +33,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 
 from relay import RelaySender
-from seendb import store_from_env, PgDailyCount
+from seendb import store_from_env, PgDailyCount, CampaignControl
 from scheduler import run_scheduler
 from send_relay import EventVariants
 
@@ -62,6 +62,10 @@ class CampaignIn(EmailIn):
     event: Optional[str] = None
     delay_lo: int = 30
     delay_hi: int = 90
+
+
+class CampaignControlIn(BaseModel):
+    key: str = Field(..., description="true to start sending, false to stop")
 
 
 def _load_slots():
@@ -192,5 +196,38 @@ def send_campaign(req: CampaignIn):
     finally:
         if sender is not None:
             sender.close()
+        if store is not None and hasattr(store, "close"):
+            store.close()
+
+
+@app.get("/campaign/status")
+def campaign_status():
+    """Show whether the campaign switch is on/off and how many sent."""
+    store = None
+    try:
+        store = store_from_env(SEEN_DB)
+        ctl = CampaignControl(store)
+        active = ctl.active()
+        return {
+            "campaign_active": active,
+            "mailed_total": store.mailed_count(),
+            "seen_db": SEEN_DB,
+        }
+    finally:
+        if store is not None and hasattr(store, "close"):
+            store.close()
+
+
+@app.post("/campaign/control")
+def campaign_control(req: CampaignControlIn):
+    """Set the campaign start/stop switch. key=true -> start, key=false -> stop."""
+    value = "true" if str(req.key).strip().lower() in ("true", "1", "start", "on") else "false"
+    store = None
+    try:
+        store = store_from_env(SEEN_DB)
+        ctl = CampaignControl(store)
+        ctl.set("campaign_active", value)
+        return {"campaign_active": value, "mailed_total": store.mailed_count()}
+    finally:
         if store is not None and hasattr(store, "close"):
             store.close()
