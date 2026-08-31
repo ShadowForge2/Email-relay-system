@@ -1,0 +1,14 @@
+[
+  {
+    "provider": "mailtrap",
+    "api_key": "PASTE_MAILTRAP_API_TOKEN_HERE",
+    "daily_cap": 150,
+    "label": "mailtrap-1"
+  },
+  {
+    "provider": "brevo",
+    "api_key": "PASTE_BREVO_API_KEY_HERE",
+    "daily_cap": 300,
+    "label": "brevo-1"
+  }
+]

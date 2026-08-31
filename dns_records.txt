@@ -1,0 +1,88 @@
+﻿One DKIM sending subdomain per provider (all under xprfire.site)
+
+========================================================================
+  PROVIDER : brevo
+  subdomain: brevo.xprfire.site
+  key file : C:\Users\Sir AK HEE\Desktop\MY PROJECTS\Email sender\relay_keys/dkim_brevo_private.pem
+
+1) DKIM  TXT
+   Name :  mail._domainkey.brevo.xprfire.site
+   Value:
+   "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuwSL9wCExH0LY+ULoWIflwxfskRifRBN88Ke/32dGUyTsddUJbxCAtFYLD+7DS3bfsE2L9ONrU9mChBzQP6FXIYQnYfD5qmlfE/H27Ks4SIBpokVEvHOwAiZN2Rhwe2ZTDayLPUluXtGs+MuKJ58mn/ZngGwIDlGqJsNPYh0mJu68kbB9qK32xALuJWjTGdoXIs/M539UGKfMGxHTG/pfxKxF6x8NTg12Asrwql1KwI2jwFd6RN0m8RKwWYS9oVpIWDGy6QzMnsrvozRFzD4OBS/8QitLAt8YG0FpZudOHnQPnAIKCA04C46DGnUqEQaSluLHqIqhKJBcGqxkXxRjQIDAQAB"
+
+2) SPF   TXT
+   Name :  brevo.xprfire.site
+   Value:
+   v=spf1 include:spf.brevo.com ~all
+
+========================================================================
+  PROVIDER : smtp2go
+  subdomain: smtp2go.xprfire.site
+  key file : C:\Users\Sir AK HEE\Desktop\MY PROJECTS\Email sender\relay_keys/dkim_smtp2go_private.pem
+
+1) DKIM  TXT
+   Name :  mail._domainkey.smtp2go.xprfire.site
+   Value:
+   "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApW4eKsYxnE053vdc6IiZ9FEUjJibSSgYhOO2ebg/dQ+gxEep+Sc3ZaYKHHtkx8k7rHarsnCoJ1nUqu6Rx98rWsAT2/e37bOAN4mk8a6BTkbO9mnt/Nzjtjuc6ON1fqhtao0K90vIP4safWWGK2SsV6ZEaLr7AtQKwwMbLlra8mdOJZdFtsnv47OyJxh2Rz2N++4iPJ9q+zPfYUlMtwtayUbdrrEIT6XZu7+g2kQLAUYK6eWC2j96ec9D/d/TY72lFin7FKDB6lSWjepBNkhp4Vt69uuExyG5n6OwumQYl46gDAWsx3C3Ib6ahbscWeUwjw/b3iwqe7mLa1w8ozfzkwIDAQAB"
+
+2) SPF   TXT
+   Name :  smtp2go.xprfire.site
+   Value:
+   v=spf1 include:smtp2go.com ~all
+
+========================================================================
+  PROVIDER : mailjet
+  subdomain: mailjet.xprfire.site
+  key file : C:\Users\Sir AK HEE\Desktop\MY PROJECTS\Email sender\relay_keys/dkim_mailjet_private.pem
+
+1) DKIM  TXT
+   Name :  mail._domainkey.mailjet.xprfire.site
+   Value:
+   "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwAMtuPSRcBDfngCdtPuSlFizGMBx7BOLYg7ShoRIXbOjrwv5ICWG+vNDVj6htsWRGhfbLg0ow8z6lxjyK7p5Wf85a9PirL7HxD/c2O682s5Fgy8ua86+lEOgq4FAoAENugLIyUiZSNJBBHm8pnCKjEA5ouKY20kvHxeYCgOQzfiEWZbxFWeTeJ6oR8tbQP0zyb8PHT2sqqIgaVMVBFENL3JUJPgHc2JqmujhH8L5pmgDwEXJXr7LPQMDn1fCHgaKd+fKYVKFjqc8EAmhjbZ4+1cMk5Ej+fmrHZVABPTAon+FzOQifZ6QhpclcadY57rw48TWapuN0jUt64Uha3OJrQIDAQAB"
+
+2) SPF   TXT
+   Name :  mailjet.xprfire.site
+   Value:
+   v=spf1 include:spf.mailjet.com ~all
+
+========================================================================
+  PROVIDER : sendpulse
+  subdomain: sendpulse.xprfire.site
+  key file : C:\Users\Sir AK HEE\Desktop\MY PROJECTS\Email sender\relay_keys/dkim_sendpulse_private.pem
+
+1) DKIM  TXT
+   Name :  mail._domainkey.sendpulse.xprfire.site
+   Value:
+   "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0TRKrVfI3PeQhCwNFyutINP4rc+ZHfMcT89TrU1hSca2DlhsNJmkXI/Aupzd458eXP/Iu+Bo+Ca7bx6ills6QiF541d/zW9TrDiR1cwXY/6/P9sVoe/XWgGM4bt4es/WTNPKheL7IhlY8lgknYr84u+1CZVK8BB872BYOGnlpFHXTHSqW2EJnbpZa3fMy9tlCJIhs6Jtau+odq4UWjggNS1sj8KMbSNCAMMiOBH/o9Z0SneaMpXYAsklyjkBd+bSC5roFS6mUPdkKXrSW/x4RCfgDMsb9AUACpt0pWKG057aIX4QTwsVVuJfwAxbs4/LbWjSGMaHfZlA3AALTUeaewIDAQAB"
+
+2) SPF   TXT
+   Name :  sendpulse.xprfire.site
+   Value:
+   v=spf1 include:spf.sendpulse.com ~all
+
+========================================================================
+  PROVIDER : mailtrap (primary)
+  subdomain: mailtrap.xprfire.site
+
+Mailtrap generates its own SPF/DKIM records. In the Mailtrap dashboard:
+  1) Sending Domains -> Add domain:  mailtrap.xprfire.site
+  2) It shows 2-3 DNS records (SPF + DKIM, and possibly DMARC) - paste
+     them 1:1 into your DNS provider. SPF will look like:
+        v=spf1 include:spf.mailtrap.io ~all
+  3) Once it verifies (green), generate an API token (Settings ->
+     API Tokens) and put it in providers.json under the mailtrap slot.
+  4) Send from e.g. hello@mailtrap.xprfire.site - free tier caps at
+     150 emails/day (raise daily_cap if you upgrade to a paid plan).
+
+=======================================================================
+
+Then send from e.g. hello@<provider>.xprfire.site - the provider you pick for a
+given subdomain must be the one whose SPF include that subdomain lists. Keys
+are per-provider; never reuse a subdomain/key across providers. ADDITIONALLY:
+publish one DMARC record so receivers know how to treat failed
+authentication:
+
+   Name :  _dmarc.xprfire.site
+   Value:
+   v=DMARC1; p=none; rua=mailto:dmarc@xprfire.site
+

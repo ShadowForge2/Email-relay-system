@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: email-delivery
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PROVIDERS_CONFIG
+        value: providers.json
+      - key: SEEN_DB
+        value: seen.sqlite
+      - key: FROM_EMAIL
+        sync: false
+      - key: FROM_DISPLAY
+        sync: false

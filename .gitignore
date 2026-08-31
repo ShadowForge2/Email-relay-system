@@ -1,0 +1,17 @@
+# Secrets / credentials (NEVER commit)
+providers.json
+*.pem
+brevo_keys/
+relay_keys/
+API-Query.TXT
+
+# Recipient / personal data
+recipients*.txt
+*.sqlite
+
+# Python / environment
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
