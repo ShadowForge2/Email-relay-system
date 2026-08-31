@@ -28,7 +28,7 @@ Run locally:
 
 import os
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
@@ -105,9 +105,30 @@ def _send(req: EmailIn) -> dict:
     return stats
 
 
-@app.get("/health")
-def health():
-    return {"status": "ok", "service": "email-delivery"}
+@app.get("/health", response_model=None)
+@app.head("/health")
+def health(response: Response = None):
+    """Liveness/readiness probe for Uptime Robot.
+
+    Returns HTTP 200 when the service is up AND its dedupe/seen store is
+    reachable, else HTTP 503. Uptime Robot treats 200 as UP and 503 as DOWN.
+    """
+    checks = {"status": "ok", "service": "email-delivery"}
+    healthy = True
+    try:
+        store = store_from_env(SEEN_DB)
+        try:
+            checks["mailed_total"] = store.mailed_count()
+            checks["seen_db"] = "postgres" if "Pg" in type(store).__name__ else SEEN_DB
+        finally:
+            store.close()
+    except Exception as e:
+        healthy = False
+        checks["status"] = "degraded"
+        checks["error"] = "seen_store_unavailable: " + str(e)[:120]
+    if response is not None:
+        response.status_code = 200 if healthy else 503
+    return checks
 
 
 @app.get("/status")
